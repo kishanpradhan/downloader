@@ -1,12 +1,18 @@
 
 import { BaseProtocol } from "../base";
 
-class Protocol extends BaseProtocol {
+export class Protocol extends BaseProtocol {
+
+	constructor(url: string) {
+		super(url);
+		console.log(url);
+	}
 
 	urlParser() {
 		return {};
 	}
 
 	async download() {
+		console.log("Download called");
 	}
 }

@@ -5,9 +5,12 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc -w",
     "start": "npm run build && node ./dist/index.js",
     "test": "mocha --require ts-node/register test/**/*.ts"
   },
+  "preferGlobal": true,
+  "bin": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kishanpradhan/downloader.git"
@@ -33,6 +36,8 @@
     "typescript": "^3.2.4"
   },
   "dependencies": {
-    "commander": "^2.19.0"
+    "@types/split": "^1.0.0",
+    "commander": "^2.19.0",
+    "split": "^1.0.1"
   }
 }
