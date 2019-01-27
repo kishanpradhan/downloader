@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { Downloader } from "../index";
 
 
+/*
 describe("Downloader", () => {
 	it("start()", () => {
 		const d = new Downloader();
@@ -10,3 +11,4 @@ describe("Downloader", () => {
 		expect(res).to.be.undefined;
 	});
 });
+ */

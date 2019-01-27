@@ -7,7 +7,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "start": "npm run build && node ./dist/index.js",
-    "test": "mocha --require ts-node/register test/**/*.ts"
+    "test": "mocha --require ts-node/register test/*.ts"
   },
   "preferGlobal": true,
   "bin": "./dist/index.js",
@@ -36,8 +36,10 @@
     "typescript": "^3.2.4"
   },
   "dependencies": {
+    "@types/ftp": "^0.3.29",
     "@types/split": "^1.0.0",
     "commander": "^2.19.0",
+    "ftp": "^0.3.10",
     "split": "^1.0.1"
   }
 }

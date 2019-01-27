@@ -3,8 +3,10 @@
 
 export interface DownloaderContract {
 	// url: string;
-	urlParser: Function;
+	parseUrl: Function;
 	download: Function;
+	start: Function;
+	finish: Function;
 }
 
 export interface CommandContract {
@@ -24,5 +26,12 @@ export interface CommandResultContract {
 	files: string[]; 
 	output?: string;
 	recursive?: boolean;
+}
+
+export interface ParsedUrlContract {
+	host?: string;
+	port?: string;
+	uri?: string;
+	name: string;
 }
 
