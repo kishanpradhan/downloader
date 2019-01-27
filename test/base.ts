@@ -6,6 +6,7 @@ import * as ftp from "../src/protocols/ftp";
 
 
 describe("BaseProtocol", () => {
+	/*
 	it("findProtocol()", () => {
 		abstract class FindProtocol extends BaseProtocol {
 			static findProtocol(url: string) {
@@ -26,6 +27,7 @@ describe("BaseProtocol", () => {
 			// console.log(t, res);
 		});
 	});
+	 */
 
 	it("getInstance()", () => {
 		/*

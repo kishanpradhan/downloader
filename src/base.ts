@@ -1,4 +1,7 @@
 import * as stream from "stream";
+import * as path from "path";
+import * as crypto from "crypto";
+import { URL } from "url";
 
 import { DownloaderContract, ParsedUrlContract } from "./contracts";
 import { File } from "./file";
@@ -6,23 +9,36 @@ import { File } from "./file";
 
 export abstract class BaseProtocol implements DownloaderContract {
 	static output: string = "./";
+	protected name: string | undefined;
 
-	constructor(protected url: string) {
+	constructor(protected url: string, protected parsed_url: ParsedUrlContract) {
+		// this.temp_name = this.getTempUniqueName();
 	}
 
 	abstract start(stream: stream.Writable): Promise<any>;
 
 	/**
-	 * Return unique name of the file to download
-	 * It is required as we will write to file using this name
-	 */
-	// abstract get name(): Promise<string>;
-
-	/**
 	 * Return protocol specific data from url
 	 * Must include name as it will be used to create write stream
 	 */
-	abstract parseUrl(url: string): Promise<ParsedUrlContract>;
+	// abstract parseUrl(url: string): Promise<ParsedUrlContract>;
+
+	static parseUrl(url: string): ParsedUrlContract | false {
+		try {
+			let u: URL = new URL(url);
+			return {
+				protocol:  u.protocol.slice(0, u.protocol.length - 1),
+				host: u.host,
+				port: parseInt(u.port),
+				uri: u.pathname,
+				user: u.username,
+				password: u.password
+			}
+		} catch(err) {
+			console.log(err);
+			return false;
+		}
+	}
 
 	static getInstance(protocol: string, ...args: any[]): BaseProtocol | false {
 		// search in multiple locations
@@ -39,10 +55,7 @@ export abstract class BaseProtocol implements DownloaderContract {
 					// continue;
 					break;
 				}
-				// console.log(protocol_class);
-				console.log(args);
 				instance = new protocol_class(...args);
-				console.log("Found", instance);
 				break;
 			} catch(err) {
 				// console.log(err);
@@ -64,98 +77,88 @@ export abstract class BaseProtocol implements DownloaderContract {
 		return true;
 	}
 
-	static run(url: string):Promise<any> | false {
-		const protocol: string | false = BaseProtocol.findProtocol(url);
-		if(!protocol) {
-			console.log("Cannot retrive protocol for url", url);
-			return false;
+	static async run(url: string):Promise<any> {
+		const parsed_url: ParsedUrlContract | false = BaseProtocol.parseUrl(url);
+		if(!parsed_url) {
+			console.log("Cannot parsed url", url);
+			return { url: url, error: "Could not parsed url" };
 		}
-		const instance: BaseProtocol | false = BaseProtocol.getInstance(protocol as string, url);
+		const instance: BaseProtocol | false = BaseProtocol.getInstance(parsed_url.protocol, url, parsed_url);
 		if(!instance) {
-			console.log(`Protocol [${protocol}] not supported or not implemented properly.`);
-			return false;
+			let msg: string = `Protocol [${parsed_url.protocol}] not supported or not implemented properly.`;
+			return { url: url, error: msg };
 		}
 		if(BaseProtocol.validateInstance(instance)) {
 			return instance.download();
 		} else {
-			return false;
+			return { url: url, error: "Instance validation failed"};
 		}
 	}
 
-	/**
-	 * Returns protocol for file download
-	 * Assumption is url will be protocol://host/uri
-	 */
-	protected static findProtocol(url: string): string | false {
-		let protocol: string | false = false;
-		// let temp: string[] = url.split("://", 1)
-		let temp: string[] = url.split("://")
-		if(temp.length > 1) {
-			protocol = temp[0];
+	async getName(parsed_url: ParsedUrlContract) {
+		// let name_parts: string[] = parsed_url.uri.split("/");
+		// let name: string = name_parts[name_parts.length - 1];
+		let name: string = path.basename(parsed_url.uri);
+		try {
+			name = await File.getUniqueFileName(name, BaseProtocol.output);
+			return BaseProtocol.output + name;
+		} catch(err) {
+			console.log(err);
+			throw err;
 		}
-			/*
-		if(!protocol && protocol === url) {
-			return false;
-		}
-			 */
-		return protocol;
+	}
+
+	protected createWriteStream(name: string) {
+		return File.createWriteStream(name, { flags: "wx" });
 	}
 
 	download(): Promise<any> {
 		return new Promise(async (resolve, reject) => {
+			// let name: string = this.name || this.temp_name;
 			let name: string = "";
 			try {
-				let data: any = await this.parseUrl(this.url);
-				if(!data.name) {
-					return reject("Parse URL is not returning a name");
-				}
-				name = data.name;
+				name = await this.getName(this.parsed_url);
 			} catch(err) {
-				return reject(err);
+				return resolve({ url: this.url, err: err.message || err });
 			}
+			this.name = name;
 			// console.log("Stream name", name);
-			const stream = File.createWriteStream(name, { flags: "wx" });
+			const stream = this.createWriteStream(name);
 			stream.on("finish", () => {
+				console.log("DONE");
 				this.finish(); // either use this or stream.on finish
-				resolve("DONE");
+				return resolve({ url: this.url, msg: "DONE" });
 			});
 
 			stream.on("error", (err: any) => {
-				console.log(err);
-				stream.close();
+				console.log("Stream error", err);
 
 				if (err.code === "EEXIST") { // If our unique file name fails, we should not remove old downloaded file
 					reject("File already exists");
 				} else {
-					File.unlink(name, () => {});
-					reject(err.message);
+					removeUnfinishedThings();
+					resolve({ url: this.url, error: err.message || new Error(err) });
 				}
 			});
 
+			function removeUnfinishedThings() {
+				stream.close();
+				File.unlink(name, () => {});
+			}
+
 			this.start(stream).then((res: any) => {
-				this.finish(); // either use this or stream.on finish
-				resolve(res);
+				// console.log("Start finished");
+				resolve({ url: this.url, msg: "Success", data: res });
 			}).catch((err: Error) => {
-				console.log("Error", err);
-				return reject(err);
+				// console.log("Protocol Error", err);
+				removeUnfinishedThings();
+				return resolve({ url: this.url, error: err });
 			});
-			console.log("Download called");
 		});
 	}
 
 	finish() {
-		console.log("not implemented");
+		// console.log("not implemented");
 	}
 
-	static parseUrl(url: string) {
-
-		return {
-			protocol: "",
-			username: "",
-			password: "",
-			host: "",
-			port: "",
-			uri: "",
-		}
-	}
 }

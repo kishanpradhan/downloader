@@ -15,9 +15,24 @@ export class Downloader {
 		if(command_result.output) { // Write test case for this also
 			BaseProtocol.output = command_result.output;
 		}
+		let all_files: Promise<any>[] = [];
 		command_result.files.forEach((file_path: string) => {
-			new File(file_path).process();
+			all_files.push(new File(file_path).process());
 		});
+		Promise.all(all_files).then((results: any[]) => {
+			for(let i in results) {
+				this.display(results[i]);
+			}
+		}).catch((err: Error) => {
+			console.log("Downloader Error", err);
+		});
+	}
+
+	/**
+	 * Display all data of urls file by file
+	 */
+	display(result: any) {
+		console.log(result);
 	}
 }
 

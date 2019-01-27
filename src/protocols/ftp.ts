@@ -1,4 +1,5 @@
-import * as stream from "stream";
+import { Writable, Readable } from "stream";
+import { URL } from "url";
 import * as ftp from "ftp";
 
 import { BaseProtocol } from "../base";
@@ -7,37 +8,53 @@ import { ParsedUrlContract } from "../contracts";
 
 export class Protocol extends BaseProtocol {
 
-	async parseUrl(url: string): Promise<ParsedUrlContract> {
-		let uri: string = url.split("://")[1];
-		let uri_parts: string[] = uri.split("/");
-		// let name: string = uri_parts[uri_parts.length - 1];
-		let name: string = uri_parts.pop() as string;
-		try {
-			name = await File.getUniqueFileName(name, BaseProtocol.output);
-		} catch(err) {
-			console.log(err);
-			throw err;
-		}
-		let host: string = uri_parts[0];
-		let host_parts: string[] = host.split(":");
-		host = host_parts[0];
-		let port: string = host_parts.length > 1 ? host_parts[1] : "";
-		uri = "/" + uri_parts.slice(1).join("/");
-		return {
-			host: host,
-			port: port,
-			uri: uri,
-			name: name
-		}
+	updateCredsIfRequired() {
+		this.parsed_url.user = this.parsed_url.user || "anonymous";
+		this.parsed_url.password = this.parsed_url.password || "anonymous";
+		this.parsed_url.port = this.parsed_url.port || 21;
 	}
 
 	download() {
-		return new Promise(async (resolve, reject) => {
-		});
+		this.updateCredsIfRequired();
+		return super.download();
 	}
 
-	start(stream: stream.Writable): Promise<any> {
-		return new Promise((resolve, reject) => {
+	start(stream_writable: Writable): Promise<any> {
+		return new Promise(async (resolve, reject) => {
+			var c = new ftp();
+			c.on('ready', () => {
+				c.get(this.parsed_url.uri, function(err, stream) {
+					if (err) {
+						c.end();
+						// stream_writable.emit("error", err);
+						return reject(err);
+					}
+					stream.once('close', function() { c.end(); });
+					stream.pipe(stream_writable);
+				});
+			});
+
+			c.on("error", (err: Error) => {
+				console.log("Error on FTP ", err);
+				try {
+					c.destroy();
+				} catch(err) {
+					console.log("handled error while ftp closing", err);
+				}
+				// stream_writable.emit("error", err);
+				return reject(err);
+			});
+			// This is not neccessary
+			process.on("unhandledRejection", (err: Error) => {
+				console.log("Unhandled", err);
+			});
+
+			c.connect({
+				host: this.parsed_url.host,
+				port: this.parsed_url.port,
+				user: this.parsed_url.user,
+				password: this.parsed_url.password
+			});
 		});
 	}
 }

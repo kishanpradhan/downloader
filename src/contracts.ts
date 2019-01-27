@@ -3,7 +3,7 @@
 
 export interface DownloaderContract {
 	// url: string;
-	parseUrl: Function;
+	// parseUrl: Function;
 	download: Function;
 	start: Function;
 	finish: Function;
@@ -18,8 +18,10 @@ export interface ParsingContract {
 }
 
 export interface FileContract {
-	process: Function;
-	getFile: Function;
+	// process(): Promise<{ path: string, error?: Error, msg?: string, data?: any }>;
+	process(): Promise<any>;
+	runFile(): Promise<any>;
+	runDir: Function;
 }
 
 export interface CommandResultContract {
@@ -30,8 +32,11 @@ export interface CommandResultContract {
 
 export interface ParsedUrlContract {
 	host?: string;
-	port?: string;
-	uri?: string;
-	name: string;
+	port?: number;
+	uri: string;
+	// name: string;
+	protocol: string;
+	user?: string;
+	password?: string;
 }
 
