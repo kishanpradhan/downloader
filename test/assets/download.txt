@@ -1,0 +1,4 @@
+http://my.file.com/file
+ftp://other.file.com/other
+sftp://and.also.this/ending
+http://212.183.159.230/5MB.zip

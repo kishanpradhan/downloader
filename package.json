@@ -10,7 +10,7 @@
     "test": "mocha --require ts-node/register test/*.ts"
   },
   "preferGlobal": true,
-  "bin": "./dist/index.js",
+  "bin": "./dist/downloader.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kishanpradhan/downloader.git"

@@ -5,7 +5,6 @@ import { CommandContract, ParsingContract, CommandResultContract } from "./contr
 let registered: boolean = false;
 
 export class Command implements CommandContract {
-
 	register(command_name: string, options: Array<[string]> = []) {
 		commander.command(command_name);
 		options.forEach((...args: any[]) => {
@@ -44,7 +43,6 @@ export class Parser implements ParsingContract {
 					// console.log("out", out);
 					break;
 				case "-r":
-					console.log("Got here r");
 					command_result["recursive"] = true;
 					break;
 				default:

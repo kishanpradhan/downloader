@@ -26,7 +26,7 @@ export class Protocol extends BaseProtocol {
 				});
 
 				request.on("error", (err: Error) => {
-					console.log("Request error", err);
+					// console.log("Request error", err);
 					// stream.emit("error", {});
 					return reject(err);
 				});
@@ -39,7 +39,7 @@ export class Protocol extends BaseProtocol {
 
 	finish() {
 		// Rename file if neccessary
-		console.log("Finished HTTP");
+		// console.log("Finished HTTP");
 	}
 
 	error() {

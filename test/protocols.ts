@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { expect } from 'chai';
 
 import { BaseProtocol } from "../src/base";
@@ -21,11 +22,20 @@ describe("HTTP Protocol", () => {
 		const res = proto.download();
 		expect(res instanceof Promise).to.equals(true);
 		res.then((data: any) => {
-			console.log("Finished download", data);
-			done();
+			fs.stat("5MB.zip", (err: Error, stat: fs.Stats) => {
+				if(err) return done(err);
+				if(stat.size > 5000000) {// 5MB size is 5000000 bytes
+					return done();
+				} 
+				done(new Error("Not downloaded fully."));
+			});
 		}).catch((err: Error) => {
 			done(err);
 		});
+	});
+
+	after(() => {
+		fs.unlink("5MB.zip", () => {});
 	});
 });
 
@@ -43,11 +53,20 @@ describe("HTTPS Protocol", () => {
 		const res = proto.download();
 		expect(res instanceof Promise).to.equals(true);
 		res.then((data: any) => {
-			console.log("Finished download", data);
-			done();
+			fs.stat("100MB.bin", (err: Error, stat: fs.Stats) => {
+				if(err) return done(err);
+				if(stat.size > 100000000) {// 100MB size is 100000000 bytes
+					return done();
+				} 
+				done(new Error("Not downloaded fully."));
+			});
 		}).catch((err: Error) => {
 			done(err);
 		});
+	});
+
+	after(() => {
+		fs.unlink("100MB.bin", () => {});
 	});
 });
 
@@ -64,41 +83,21 @@ describe("FTP Protocol", () => {
 		const res = proto.download();
 		expect(res instanceof Promise).to.equals(true);
 		res.then((data: any) => {
-			console.log("Finished download", data);
-			done();
+			fs.stat("readme.txt", (err: Error, stat: fs.Stats) => {
+				if(err) return done(err);
+				if(stat.size > 400) { // readme.txt size is 403
+					return done();
+				} 
+				done(new Error("Not downloaded fully."));
+			});
 		}).catch((err: Error) => {
 			done(err);
 		});
 	});
 
-	/*
-	it("parseUrl()", (done: Function) => {
-		const f5M: string = "ftp://212.183.159.230/pub/5MB.zip";
-		const fsmall: string = "ftp://demo:password@test.rebex.net:21/readme.txt";
-		let cases: any[] = [
-			["ftp://demo:password@test.rebex.net:21/readme.txt", { host: "test.rebex.net", port: "21", user: "demo", password: "password", uri: "/readme.txt" }],
-			["ftp://demo:password@test.rebex.net/readme.txt", { host: "test.rebex.net", port: "21", user: "demo", password: "password", uri: "/readme.txt" }],
-			["ftp://demo:password@test.rebex.net:8990/path/readme.txt", { host: "test.rebex.net", port: "8990", user: "demo", password: "password", uri: "/path/readme.txt" }],
-		];
-
-		const proto = new ftp.Protocol(fsmall);
-		let promises: Promise<any>[] = [];
-		for(let i in cases) {
-			let res = proto.parseUrl(cases[i][0]);
-			expect(res instanceof Promise).to.equals(true);
-			promises.push(res);
-		}
-		Promise.all(promises).then((results: any[]) => {
-			for(let i in results) {
-				// console.log("i", i, cases[i][1], results[i]);
-				for(let key in cases[i][1]) {
-					expect(results[i][key]).to.equals(cases[i][1][key]);
-				}
-			}
-			done();
-		}).catch(err => done(err));
+	after(() => {
+		fs.unlink("readme.txt", () => {});
 	});
-	 */
 });
 
 /*

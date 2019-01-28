@@ -3,21 +3,7 @@ import { expect } from 'chai';
 import * as command from "../src/command";
 
 
-describe("Command", () => {
-	/*
-	it("returns nothing", () => {
-	});
-
-	it("register command and it's options", () => {
-		const com = new command.Command();
-		com.register("folder <dir>")
-		const res = com.parse([ "folder", "./src"]);
-		expect(res).to.equals("./src");
-	});
-	 */
-});
-
-describe("Parse", () => {
+describe("Parser", () => {
 	it("parse(): parse arguments and returns a list of files and folders", () => {
 		let args = ["", "", "download.txt"];
 		const parser = new command.Parser(args);
@@ -41,12 +27,24 @@ describe("Parse", () => {
 		expect(res.files[1]).to.equals("different_file.txt");
 	});
 
-	/*
-	it("should throw Error", () => {
-		let args = ["", ""];
-		const parser = new command.Parser(args);
-		const res = parser.parse();
-		expect(res instanceof Error).to.equals(true);
+	it("parse(): check different arguments", () => {
+		let args = ["", "", "download.txt", "download.txt", "--output", "/download/path", "-r", "--unrecognized"];
+		let parser = new command.Parser(args);
+		let res = parser.parse();
+
+		expect(res.files.length).to.equals(2); // --unrecognized is also a file name here
+		expect(res.files[0]).to.equals("download.txt");
+		expect(res.output).to.equals("/download/path");
+		expect(res.recursive).to.equals(true);
 	});
-	 */
+
+	it("parse(): should throw Error", () => {
+		let args = ["", ""];
+		let parser = new command.Parser(args);
+		expect(parser.parse.bind(parser)).to.throw("Pleae provide at least a file name");
+
+		parser = new command.Parser(["file.txt", "file2.csv"]);
+		expect(parser.parse.bind(parser)).to.throw("Pleae provide at least a file name");
+	});
+	 
 });

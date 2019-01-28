@@ -49,18 +49,20 @@ export class Protocol extends BaseProtocol {
 	}
 
 
+	/**
+	 * Need to write test case for this
+	 */
+		/*
 	finish() {
-		console.log("Finished and rename if neccesary");
+		// console.log("Finished and rename if neccesary");
 		if(this.should_rename && this.name && this.rename_to) {
-			File.rename(this.name, this.rename_to, () => {
-			});
+			let folder: string = path.dirname(this.name);
+			File.getUniqueFileName(this.rename_to, folder)
+				.then((name: string) => {
+					File.rename(this.name, folder + "/" + this.rename_to, () => {});
+				}).catch(() => {});
 		}
 	}
-
-	error() {
-		// May be use for error handling
-		// Unlink file
-		// Clear buffer
-	}
+		 */
 }
 

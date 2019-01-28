@@ -35,7 +35,7 @@ export class Protocol extends BaseProtocol {
 			});
 
 			c.on("error", (err: Error) => {
-				console.log("Error on FTP ", err);
+				// console.log("Error on FTP ", err);
 				try {
 					c.destroy();
 				} catch(err) {

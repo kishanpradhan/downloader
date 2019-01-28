@@ -9,6 +9,7 @@ import { File } from "./file";
 
 export abstract class BaseProtocol implements DownloaderContract {
 	static output: string = "./";
+	static protocol_locations: string[] = ["./protocols"];
 	protected name: string | undefined;
 
 	constructor(protected url: string, protected parsed_url: ParsedUrlContract) {
@@ -29,25 +30,32 @@ export abstract class BaseProtocol implements DownloaderContract {
 			return {
 				protocol:  u.protocol.slice(0, u.protocol.length - 1),
 				host: u.host,
+				hostname: u.hostname,
 				port: parseInt(u.port),
 				uri: u.pathname,
 				user: u.username,
 				password: u.password
 			}
 		} catch(err) {
-			console.log(err);
+			// console.log(err);
 			return false;
 		}
 	}
 
 	static getInstance(protocol: string, ...args: any[]): BaseProtocol | false {
-		// search in multiple locations
-		let protocol_locations = ["./protocols/"];
+		let user_defined_locations: string | undefined = process.env["DOWNLODER_PROTOCOL"];
+		let protocol_locations = BaseProtocol.protocol_locations;
+		if(user_defined_locations) {
+			let parts: string[] = user_defined_locations.split(",");
+			protocol_locations = parts.concat(protocol_locations);
+		}
 		let instance: BaseProtocol | false = false;
 		for(let protocol_location of protocol_locations) {
-			// console.log("loc", protocol_location, protocol);
+			if(protocol_location[protocol_location.length - 1] !== "/") {
+				protocol_location += "/";
+			}
+			// console.log("searching in loc", protocol_location + protocol);
 			try {
-				// Ensure protocol_location have "/" in it's end
 				let protocol_module: any = require(protocol_location + protocol);
 				let protocol_class: any = protocol_module["Protocol"];
 				if(!protocol_class) {
@@ -70,8 +78,13 @@ export abstract class BaseProtocol implements DownloaderContract {
 			console.log(`Protocol does not have download method`);
 			return false;
 		}
+
+		if(!(instance.start && (typeof instance.start === "function"))) {
+			console.log(`Protocol does not have start method`);
+			return false;
+		}
 		if(!instance.url) {
-			console.log(`Protocol did not get any url`);
+			console.log(`Protocol does not have any url`);
 			return false;
 		}
 		return true;
@@ -80,7 +93,7 @@ export abstract class BaseProtocol implements DownloaderContract {
 	static async run(url: string):Promise<any> {
 		const parsed_url: ParsedUrlContract | false = BaseProtocol.parseUrl(url);
 		if(!parsed_url) {
-			console.log("Cannot parsed url", url);
+			// console.log("Cannot parsed url", url);
 			return { url: url, error: "Could not parsed url" };
 		}
 		const instance: BaseProtocol | false = BaseProtocol.getInstance(parsed_url.protocol, url, parsed_url);
@@ -112,7 +125,7 @@ export abstract class BaseProtocol implements DownloaderContract {
 		return File.createWriteStream(name, { flags: "wx" });
 	}
 
-	download(): Promise<any> {
+	download(counter: number = 0): Promise<any> {
 		return new Promise(async (resolve, reject) => {
 			// let name: string = this.name || this.temp_name;
 			let name: string = "";
@@ -127,14 +140,22 @@ export abstract class BaseProtocol implements DownloaderContract {
 			stream.on("finish", () => {
 				console.log("DONE");
 				this.finish(); // either use this or stream.on finish
-				return resolve({ url: this.url, msg: "DONE" });
+				return resolve({ url: this.url, msg: "Success" });
 			});
 
 			stream.on("error", (err: any) => {
 				console.log("Stream error", err);
 
 				if (err.code === "EEXIST") { // If our unique file name fails, we should not remove old downloaded file
-					reject("File already exists");
+					if(counter < 5) {
+						counter += 1;
+						console.log("Recursive calling for different name", counter);
+						setTimeout(() => {
+							this.download(counter); // Profile this for huge number of files. This may lead to memory leak if lots of url have the same last uri. Fix: Use setTimeout(f, 100)
+						}, 100);
+					} else {
+						resolve({ url: this.url, error: new Error("File already exists") });
+					}
 				} else {
 					removeUnfinishedThings();
 					resolve({ url: this.url, error: err.message || new Error(err) });
@@ -147,8 +168,9 @@ export abstract class BaseProtocol implements DownloaderContract {
 			}
 
 			this.start(stream).then((res: any) => {
+				// This is applicable when request is finished, not stream wrtting finished. So do not resolve from here.
 				// console.log("Start finished");
-				resolve({ url: this.url, msg: "Success", data: res });
+				// resolve({ url: this.url, msg: "Success", data: res });
 			}).catch((err: Error) => {
 				// console.log("Protocol Error", err);
 				removeUnfinishedThings();
