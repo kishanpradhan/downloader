@@ -5,8 +5,9 @@
 ## Installation
 1. Clone the project
 2. Run `npm install`
-3. Run `npm run test` \[optional]
-4. Run `npm link`
+3. Run `npm run test -- --timeout 1000000` \[optional] provide your own timeout
+4. Run `npm run build`
+5. Run `npm link`
 
 Examples
 ==========
