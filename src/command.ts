@@ -1,24 +1,5 @@
-import * as commander from "commander";
 import { CommandContract, ParsingContract, CommandResultContract } from "./contracts";
 
-
-let registered: boolean = false;
-
-export class Command implements CommandContract {
-	register(command_name: string, options: Array<[string]> = []) {
-		commander.command(command_name);
-		options.forEach((...args: any[]) => {
-			console.log(args);
-		})
-		console.log(command_name, options);
-	}
-
-	parse(args: string[]) {
-		commander.parse(args);
-		console.log(commander);
-		return commander.folder;
-	}
-}
 
 export class Parser implements ParsingContract {
 
@@ -39,6 +20,10 @@ export class Parser implements ParsingContract {
 			switch(name) {
 				case "--output": 
 					let out: string = this.args[++i];
+					if(out == "-r") {
+						i -= 1;
+						out = "./";
+					}
 					command_result["output"] = out;
 					// console.log("out", out);
 					break;

@@ -149,7 +149,7 @@ export abstract class BaseProtocol implements DownloaderContract {
 				if (err.code === "EEXIST") { // If our unique file name fails, we should not remove old downloaded file
 					if(counter < 5) {
 						counter += 1;
-						console.log("Recursive calling for different name", counter);
+						// console.log("Recursive calling for different name", counter);
 						setTimeout(() => {
 							this.download(counter); // Profile this for huge number of files. This may lead to memory leak if lots of url have the same last uri. Fix: Use setTimeout(f, 100)
 						}, 100);

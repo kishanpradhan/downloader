@@ -16,13 +16,9 @@ export class Protocol extends BaseProtocol {
 						response.pipe(stream);
 					} else {
 						// stream.emit("error", {});
-						// console.log(`Server responded with ${response.statusCode}: ${response.statusMessage}`);
+						// console.log(`HTTP Server responded with ${response.statusCode}: ${response.statusMessage}`);
 						return reject(new Error(`Server responded with ${response.statusCode}: ${response.statusMessage}`));
 					}
-				});
-
-				request.on("finish", () => {
-					resolve();
 				});
 
 				request.on("error", (err: Error) => {
