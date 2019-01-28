@@ -37,12 +37,56 @@ export class Downloader {
 		});
 	}
 
+	applyColor(color: string, data: string) {
+		let c: { [x:string]: string } = {
+			Reset : "\x1b[0m",
+			FgRed : "\x1b[31m",
+			FgGreen : "\x1b[32m",
+			FgYellow : "\x1b[33m",
+		};
+
+		if(!c[color]) return data;
+		return c[color] + data + c["Reset"];
+	}
+
 	/**
 	 * Display all data of urls file by file
 	 */
 	display(result: any) {
-		console.log("Results of download");
-		console.log(result);
+		console.log("------ Results ------");
+		// console.log(result);
+		let res: string = "";
+		if(result.msg !== "Success") {
+			res = "Error";
+			if(result.error) {
+				res += ": " + (result.error.message || result.error)
+			}
+			res = this.applyColor("FgRed", res);
+		} else {
+			res = this.applyColor("FgGreen", "Success");
+		}
+
+		let data: string = "";
+		for(let d of result.data || []) {
+			let sub_data: string = `url: ${d.url} \n\t\t`;
+			if(d.msg == "Success") {
+				sub_data += `res: ${this.applyColor("FgGreen", "Success")}`
+			} else if(d.error) {
+				sub_data += `res: ${this.applyColor("FgRed", d.error.message || d.error)}`
+			} else {
+				sub_data += `${this.applyColor("FgYellow", "Unknown")}`;
+			}
+
+			data += sub_data + "\n\n\t\t";
+		}
+		let out: string = `
+\t File: ${result.path}
+\t Result: ${res}
+\t Data:
+\t \t${data}
+		`;
+
+		console.log(out);
 	}
 }
 
